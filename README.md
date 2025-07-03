@@ -6,6 +6,25 @@
 
 A production-ready Model Context Protocol (MCP) server that integrates Google's Gemini Imagen API with Claude Desktop for AI-powered image generation. Features multiple model support, batch processing, and advanced generation parameters.
 
+## 🚀 Quick Start
+
+1. **Get a Gemini API key** from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. **Add this to your Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+   ```json
+   {
+     "mcpServers": {
+       "gemini-imagen": {
+         "command": "npx",
+         "args": ["-y", "gemini-imagen-mcp-server", "--model", "imagen-4-ultra", "--batch"],
+         "env": {"GEMINI_API_KEY": "your-api-key-here"}
+       }
+     }
+   }
+   ```
+3. **Restart Claude Desktop** and start generating images!
+
+**No installation required** - npx handles everything automatically!
+
 ## ✨ Features
 
 - **🎨 Multiple Imagen Models**: Support for Imagen 3, Imagen 4, and Imagen 4 Ultra
@@ -28,7 +47,38 @@ A production-ready Model Context Protocol (MCP) server that integrates Google's 
 
 ### Installation
 
-#### 🚀 Option 1: NPM Installation (Recommended)
+#### 🚀 Option 1: Zero Installation with npx (Recommended)
+
+**No installation needed!** Just configure Claude Desktop:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "gemini-imagen-mcp-server",
+        "--model", "imagen-4-ultra",
+        "--batch",
+        "--max-batch-size", "4"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "your-gemini-api-key-here"
+      }
+    }
+  }
+}
+```
+
+**That's it!** Claude Desktop will automatically download and run the server when needed.
+
+> **Note:** The first time you use it, npx will download the package (takes a few seconds). Subsequent uses will be instant.
+
+#### 📦 Option 2: Global NPM Installation
 
 **Install globally:**
 ```bash
@@ -36,12 +86,6 @@ npm install -g gemini-imagen-mcp-server
 ```
 
 **Configure Claude Desktop:**
-
-Add to your Claude Desktop configuration file:
-
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
-
 ```json
 {
   "mcpServers": {
@@ -56,7 +100,7 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-#### 📁 Option 2: Manual Installation
+#### 📁 Option 3: Manual Installation
 
 1. **Clone and setup:**
 ```bash
@@ -95,12 +139,15 @@ Add to your Claude Desktop configuration file:
 
 ### Updates
 
-**NPM users:**
+**npx users (Option 1):**
+No action needed! npx automatically uses the latest version.
+
+**Global NPM users (Option 2):**
 ```bash
 npm update -g gemini-imagen-mcp-server
 ```
 
-**Manual installation users:**
+**Manual installation users (Option 3):**
 ```bash
 git pull
 npm install

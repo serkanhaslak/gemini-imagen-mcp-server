@@ -1,9 +1,10 @@
 {
   "mcpServers": {
     "gemini-imagen": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/absolute/path/to/gemini-imagen-mcp-server/build/index.js",
+        "-y",
+        "gemini-imagen-mcp-server",
         "--model", "imagen-4-ultra",
         "--batch",
         "--max-batch-size", "4",
