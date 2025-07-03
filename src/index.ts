@@ -16,54 +16,7 @@ const IMAGEN_MODELS = {
 
 type ImagenModel = keyof typeof IMAGEN_MODELS;
 
-// Display modes
-type DisplayMode = 'auto' | 'inline' | 'files' | 'hybrid';
-
-// Environment detection
-function detectEnvironment(): DisplayMode {
-  // Priority 1: Check for Claude Desktop environment indicators
-  const parentProcess = process.env.CLAUDE_DESKTOP || process.env._; // Unix systems
-  const isClaudeDesktop = parentProcess?.includes('Claude') || 
-                         process.env.ELECTRON_RUN_AS_NODE === '1' ||
-                         process.env.CLAUDE_MCP_SERVER === 'true' ||
-                         process.env.PWD?.includes('Claude') ||
-                         process.cwd().includes('Claude') ||
-                         process.env.NODE_ENV === 'claude-desktop' ||
-                         process.env.MCP_CLIENT_TYPE === 'claude-desktop';
-  
-  // Priority 2: Check if we're in Claude Code specifically
-  const isClaudeCode = process.env.TERM_PROGRAM === 'vscode' || 
-                      process.env.TERM?.includes('code') ||
-                      process.env.PWD?.includes('Claude Code') ||
-                      process.cwd().includes('Claude Code') ||
-                      process.env.MCP_CLIENT_TYPE === 'claude-code';
-  
-  // Priority 3: Check for project environment indicators  
-  let isInProject = false;
-  try {
-    // Use synchronous fs operations for environment detection
-    const fs = require('fs');
-    isInProject = process.env.PWD?.includes('project') ||
-                  process.env.PWD?.includes('workspace') ||
-                  fs.existsSync('package.json') ||
-                  fs.existsSync('.git');
-  } catch (error) {
-    // Fallback: check current working directory
-    isInProject = process.cwd().includes('project') || 
-                  process.cwd().includes('workspace');
-  }
-  
-  // Decision logic with clear priorities
-  if (isClaudeDesktop) {
-    return 'inline'; // Claude Desktop: always inline, never save files
-  } else if (isClaudeCode) {
-    return 'hybrid'; // Claude Code: save files + show inline
-  } else if (isInProject) {
-    return 'hybrid'; // Project: save files + show small images inline
-  } else {
-    return 'files'; // Default CLI: save files only
-  }
-}
+// Claude Code focused - always save files to imagen folder
 
 // Configuration interface
 interface ServerConfig {
@@ -72,7 +25,6 @@ interface ServerConfig {
   batchProcessing: boolean;
   maxBatchSize: number;
   outputDir: string;
-  displayMode: DisplayMode;
 }
 
 // Parse command line arguments
@@ -85,7 +37,7 @@ function parseArgs(): Partial<ServerConfig> {
     
     if (arg === '--help' || arg === '-h') {
       console.log(`
-Gemini Imagen MCP Server
+Gemini Imagen MCP Server for Claude Code
 
 Usage: node index.js [options]
 
@@ -93,8 +45,7 @@ Options:
   --model <model>          Imagen model to use (imagen-3, imagen-4, imagen-4-ultra)
   --batch                  Enable batch processing mode
   --max-batch-size <size>  Maximum batch size (default: 4)
-  --output-dir <dir>       Output directory for images (default: ./generated_images)
-  --display-mode <mode>    How to display images (auto, inline, files, hybrid)
+  --output-dir <dir>       Output directory for images (default: imagen)
   --help, -h               Show this help message
   --version, -v            Show version
 
@@ -106,20 +57,14 @@ Models:
   imagen-4                Imagen 4.0 (preview) 
   imagen-4-ultra          Imagen 4.0 Ultra (preview)
 
-Display Modes:
-  auto                    Auto-detect environment (Claude Desktop vs CLI)
-  inline                  Always show images inline in chat
-  files                   Always save images to files
-  hybrid                  Save files + show small images inline
-
 Example:
-  GEMINI_API_KEY=your_key node index.js --model imagen-4-ultra --batch --display-mode auto
+  GEMINI_API_KEY=your_key node index.js --model imagen-4-ultra --batch
 `);
       process.exit(0);
     }
     
     if (arg === '--version' || arg === '-v') {
-      console.log('1.2.4');
+      console.log('1.3.0');
       process.exit(0);
     }
     
@@ -152,17 +97,6 @@ Example:
       config.outputDir = args[i + 1];
       i++;
     }
-    
-    if (arg === '--display-mode' && i + 1 < args.length) {
-      const mode = args[i + 1] as DisplayMode;
-      if (['auto', 'inline', 'files', 'hybrid'].includes(mode)) {
-        config.displayMode = mode;
-        i++;
-      } else {
-        console.error(`Error: Invalid display mode '${mode}'. Valid modes: auto, inline, files, hybrid`);
-        process.exit(1);
-      }
-    }
   }
   
   return config;
@@ -179,31 +113,27 @@ if (!apiKey) {
 }
 
 // Server configuration
-const detectedMode = detectEnvironment();
 const serverConfig: ServerConfig = {
   apiKey,
   defaultModel: cliConfig.defaultModel || 'imagen-4-ultra',
   batchProcessing: cliConfig.batchProcessing || false,
   maxBatchSize: cliConfig.maxBatchSize || 4,
-  outputDir: cliConfig.outputDir || './generated_images',
-  displayMode: cliConfig.displayMode || detectedMode
+  outputDir: cliConfig.outputDir || 'imagen'
 };
 
 const IMAGEN_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
 
-console.error(`Starting Gemini Imagen MCP Server`);
+console.error(`Starting Gemini Imagen MCP Server for Claude Code`);
 console.error(`Default model: ${serverConfig.defaultModel}`);
 console.error(`Batch processing: ${serverConfig.batchProcessing ? 'enabled' : 'disabled'}`);
 console.error(`Max batch size: ${serverConfig.maxBatchSize}`);
 console.error(`Output directory: ${serverConfig.outputDir}`);
-console.error(`Display mode: ${serverConfig.displayMode} ${cliConfig.displayMode ? '(explicit)' : '(auto-detected)'}`);
-console.error(`Environment debug: PWD=${process.env.PWD}, CWD=${process.cwd()}`);
-console.error(`Process debug: TERM=${process.env.TERM}, TERM_PROGRAM=${process.env.TERM_PROGRAM}`);
+console.error(`Working directory: ${process.cwd()}`);
 
 // Initialize server
 const server = new McpServer({
-  name: "gemini-imagen-4",
-  version: "1.2.4"
+  name: "gemini-imagen-claude-code",
+  version: "1.3.0"
 });
 
 // Image generation history for tracking
@@ -227,15 +157,10 @@ function generateFilename(prompt: string, model: string, index: number = 1): str
 
 // Helper function to save image locally
 async function saveImageLocally(base64Data: string, filename: string): Promise<string> {
-  // Use a safe default directory for Claude Desktop
   let outputDir = serverConfig.outputDir;
   
-  // If default path starts with './', resolve it relative to home directory in Claude Desktop
-  if (outputDir.startsWith('./')) {
-    const homeDir = process.env.HOME || process.env.USERPROFILE || process.cwd();
-    outputDir = path.join(homeDir, 'generated_images');
-  } else if (!path.isAbsolute(outputDir)) {
-    // Make relative paths absolute
+  // For Claude Code: Always save relative to current working directory
+  if (!path.isAbsolute(outputDir)) {
     outputDir = path.resolve(process.cwd(), outputDir);
   }
   
@@ -252,66 +177,27 @@ async function saveImageLocally(base64Data: string, filename: string): Promise<s
   return filepath;
 }
 
-// Smart image handling based on display mode
+// Claude Code image handling - save files in imagen folder
 async function handleImageDisplay(base64Data: string, mimeType: string, prompt: string, model: string, index: number = 1): Promise<any[]> {
   const imageSize = Buffer.from(base64Data, 'base64').length;
   const content: any[] = [];
   
-  switch (serverConfig.displayMode) {
-    case 'inline':
-      // Claude Desktop mode: Always inline, never save files
-      content.push({
-        type: "image",
-        data: base64Data,
-        mimeType: mimeType
-      });
-      break;
-      
-    case 'files':
-      // CLI/Project mode: Always save files, show paths
-      const filename = generateFilename(prompt, model, index);
-      const imagePath = await saveImageLocally(base64Data, filename);
-      if (imagePath) {
-        content.push({
-          type: "text",
-          text: `Image saved to: ${imagePath}\\nSize: ${formatBytes(imageSize)}`
-        });
-      } else {
-        content.push({
-          type: "text",
-          text: `Failed to save image (Size: ${formatBytes(imageSize)})`
-        });
-      }
-      break;
-      
-    case 'hybrid':
-      // Hybrid mode: Save files AND show images inline
-      const filenameHybrid = generateFilename(prompt, model, index);
-      const imagePathHybrid = await saveImageLocally(base64Data, filenameHybrid);
-      
-      // Always show images inline in hybrid mode
-      content.push({
-        type: "image",
-        data: base64Data,
-        mimeType: mimeType
-      });
-      
-      // Also provide file path info
-      if (imagePathHybrid) {
-        content.push({
-          type: "text",
-          text: `Image also saved to: ${imagePathHybrid} (${formatBytes(imageSize)})`
-        });
-      }
-      break;
-      
-    default:
-      // Fallback: display inline
-      content.push({
-        type: "image",
-        data: base64Data,
-        mimeType: mimeType
-      });
+  // Save file to imagen folder
+  const filename = generateFilename(prompt, model, index);
+  const imagePath = await saveImageLocally(base64Data, filename);
+  
+  if (imagePath) {
+    // Get relative path for better display
+    const relativePath = path.relative(process.cwd(), imagePath);
+    content.push({
+      type: "text",
+      text: `Image saved to: ${relativePath}\nSize: ${formatBytes(imageSize)}`
+    });
+  } else {
+    content.push({
+      type: "text",
+      text: `Failed to save image (Size: ${formatBytes(imageSize)})`
+    });
   }
   
   return content;
@@ -723,13 +609,14 @@ server.registerTool(
         content: [
           {
             type: "text" as const,
-            text: `✅ Server healthy\n` +
+            text: `✅ Server healthy (Claude Code)\n` +
                   `📡 API connected: ${isApiConnected ? 'Yes' : 'No'}\n` +
                   `🔑 API key configured: ${apiKey ? 'Yes' : 'No'}\n` +
                   `🎨 Default model: ${serverConfig.defaultModel}\n` +
                   `📦 Batch processing: ${serverConfig.batchProcessing ? 'Enabled' : 'Disabled'}\n` +
                   `📊 Images generated this session: ${imageHistory.size}\n` +
                   `📁 Output directory: ${serverConfig.outputDir}\n` +
+                  `📂 Working directory: ${process.cwd()}\n` +
                   `⏰ Server uptime: ${process.uptime().toFixed(0)}s`
           }
         ]
@@ -786,12 +673,15 @@ server.registerResource(
     mimeType: "text/markdown"
   },
   async () => {
-    const docs = `# Gemini Imagen MCP Server API
+    const docs = `# Gemini Imagen MCP Server for Claude Code
+
+## Overview
+This MCP server is specifically designed for Claude Code to generate images directly in your project directory. Images are saved to the \`imagen/\` folder in your project root.
 
 ## Available Models
 - **imagen-3**: Stable Imagen 3.0 model
 - **imagen-4**: Preview Imagen 4.0 model  
-- **imagen-4-ultra**: Preview Imagen 4.0 Ultra model
+- **imagen-4-ultra**: Preview Imagen 4.0 Ultra model (recommended)
 
 ## Tools
 
@@ -809,7 +699,7 @@ Generate single or multiple images with advanced parameters.
 - \`output_format\`: image/jpeg, image/png
 
 ### batch_generate
-Process multiple prompts efficiently.
+Process multiple prompts efficiently with batch processing.
 
 **Parameters:**
 - \`prompts\`: Array of text prompts
@@ -820,7 +710,7 @@ Process multiple prompts efficiently.
 Show available models and capabilities.
 
 ### health_check
-Check server status and connectivity.
+Check server status and API connectivity for Claude Code.
 
 ## Resources
 
@@ -829,6 +719,21 @@ View recent generation history with parameters.
 
 ### api_documentation
 This documentation.
+
+## Configuration for Claude Code
+
+Add to your Claude Code MCP configuration:
+\`\`\`json
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "npx",
+      "args": ["-y", "gemini-imagen-mcp-server"],
+      "env": {"GEMINI_API_KEY": "your-api-key"}
+    }
+  }
+}
+\`\`\`
 
 ## Command Line Usage
 
@@ -840,12 +745,15 @@ node index.js --model imagen-4-ultra
 node index.js --batch --max-batch-size 8
 
 # Custom output directory
-node index.js --output-dir /path/to/images
+node index.js --output-dir custom-images
 \`\`\`
 
 ## Environment Variables
 
 - \`GEMINI_API_KEY\`: Your Google Gemini API key (required)
+
+## Output
+All images are saved to the \`imagen/\` folder in your project root with descriptive filenames.
 `;
     
     return {

@@ -1,419 +1,335 @@
-# Gemini Imagen MCP Server
+# Gemini Imagen MCP Server for Claude Code
 
 [![npm version](https://badge.fury.io/js/gemini-imagen-mcp-server.svg)](https://badge.fury.io/js/gemini-imagen-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 
-A production-ready Model Context Protocol (MCP) server that integrates Google's Gemini Imagen API with Claude Desktop for AI-powered image generation. Features multiple model support, batch processing, and advanced generation parameters.
+🎨 **Perfect Claude Code MCP server** for AI-powered image generation with Google's Gemini Imagen API. Generate images directly in your project's `imagen/` folder while coding!
+
+## ✨ Why This MCP Server?
+
+- **🔥 Claude Code Optimized**: Designed specifically for Claude Code workflow
+- **📁 Project Integration**: Images saved directly in your project's `imagen/` folder
+- **🎯 Zero Setup**: Just add API key and start generating images
+- **⚡ Multiple Models**: Support for Imagen 3, Imagen 4, and Imagen 4 Ultra
+- **📦 Batch Processing**: Generate multiple images efficiently
+- **🎛️ Advanced Controls**: Aspect ratios, negative prompts, seeds, and more
 
 ## 🚀 Quick Start
 
-1. **Get a Gemini API key** from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. **Add this to your Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
-   ```json
-   {
-     "mcpServers": {
-       "gemini-imagen": {
-         "command": "npx",
-         "args": ["-y", "gemini-imagen-mcp-server", "--model", "imagen-4-ultra", "--display-mode", "auto"],
-         "env": {"GEMINI_API_KEY": "your-api-key-here"}
-       }
-     }
-   }
-   ```
-3. **Restart Claude Desktop** and start generating images!
+### 1. Get Your API Key
+Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-**No installation required** - npx handles everything automatically!
+### 2. Install & Configure
+**Zero Installation Required** - Use with npx:
 
-> **✅ Latest Update (v1.2.2):** Fixed Claude Desktop image display issues! Images now show perfectly inline in Claude Desktop chat with improved path handling and environment detection.
-
-## ✨ Features
-
-- **🎨 Multiple Imagen Models**: Support for Imagen 3, Imagen 4, and Imagen 4 Ultra
-- **🖼️ Smart Image Display**: Auto-detects environment (Claude Desktop vs CLI) for optimal image display
-- **📦 Batch Processing**: Generate multiple images efficiently with configurable batch sizes
-- **🎛️ Advanced Parameters**: Negative prompts, person generation controls, custom seeds
-- **📐 Flexible Aspect Ratios**: Support for 1:1, 3:4, 4:3, 9:16, 16:9
-- **🔧 CLI Configuration**: Command-line arguments for model selection and batch settings
-- **🛡️ Production Ready**: Comprehensive error handling, validation, and logging
-- **📊 Generation History**: Track and review previous generations with full parameters
-- **🏥 Health Monitoring**: Built-in health checks and API connectivity diagnostics
-- **📚 Built-in Documentation**: Comprehensive API documentation and examples
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+ 
-- Google Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-- Claude Desktop or MCP-compatible client
-
-### Installation
-
-#### 🚀 Option 1: Zero Installation with npx (Recommended)
-
-**No installation needed!** Just configure Claude Desktop:
-
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
-
+Add to your Claude Code MCP settings:
 ```json
 {
   "mcpServers": {
     "gemini-imagen": {
       "command": "npx",
-      "args": [
-        "-y",
-        "gemini-imagen-mcp-server",
-        "--model", "imagen-4-ultra",
-        "--display-mode", "auto",
-        "--batch",
-        "--max-batch-size", "4"
-      ],
+      "args": ["-y", "gemini-imagen-mcp-server"],
       "env": {
-        "GEMINI_API_KEY": "your-gemini-api-key-here"
+        "GEMINI_API_KEY": "your-api-key-here"
       }
     }
   }
 }
 ```
 
-**That's it!** Claude Desktop will automatically download and run the server when needed.
-
-> **Note:** The first time you use it, npx will download the package (takes a few seconds). Subsequent uses will be instant.
-
-#### 📦 Option 2: Global NPM Installation
-
-**Install globally:**
-```bash
-npm install -g gemini-imagen-mcp-server
+### 3. Start Generating Images!
+```
+Generate an image of "a futuristic robot coding in a modern office"
 ```
 
-**Configure Claude Desktop:**
-```json
-{
-  "mcpServers": {
-    "gemini-imagen": {
-      "command": "gemini-imagen-mcp",
-      "args": ["--model", "imagen-4-ultra", "--display-mode", "auto", "--batch", "--max-batch-size", "4"],
-      "env": {
-        "GEMINI_API_KEY": "your-gemini-api-key-here"
-      }
-    }
-  }
-}
+Images will be saved to `imagen/` folder in your current project! 🎯
+
+## 📁 How It Works
+
+When you generate images, they're automatically saved with descriptive filenames:
+```
+your-project/
+├── imagen/
+│   ├── imagen-4-ultra_2024-01-15T10-30-45_futuristic_robot_coding_1.png
+│   ├── imagen-4_2024-01-15T10-32-12_sunset_landscape_1.png
+│   └── imagen-3_2024-01-15T10-35-01_abstract_art_design_1.png
+├── src/
+└── README.md
 ```
 
-#### 📁 Option 3: Manual Installation
+## 🎨 Available Models
 
-1. **Clone and setup:**
-```bash
-git clone https://github.com/serkanhaslak/gemini-imagen-mcp-server.git
-cd gemini-imagen-mcp-server
-npm install
-```
+| Model | Quality | Speed | Best For |
+|-------|---------|-------|----------|
+| **imagen-4-ultra** | 🌟🌟🌟🌟🌟 | ⚡⚡⚡ | Premium quality, detailed images |
+| **imagen-4** | 🌟🌟🌟🌟 | ⚡⚡⚡⚡ | Great quality, faster generation |
+| **imagen-3** | 🌟🌟🌟 | ⚡⚡⚡⚡⚡ | Good quality, fastest generation |
 
-2. **Build the server:**
-```bash
-npm run build
-```
+## 💡 Usage Examples
 
-3. **Configure Claude Desktop:**
-
-Add to your Claude Desktop configuration file:
-
-**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "gemini-imagen": {
-      "command": "node",
-      "args": ["/absolute/path/to/gemini-imagen-mcp-server/build/index.js"],
-      "env": {
-        "GEMINI_API_KEY": "your-gemini-api-key-here"
-      }
-    }
-  }
-}
-```
-
-**Restart Claude Desktop** and start generating images!
-
-### Updates
-
-**npx users (Option 1):**
-No action needed! npx automatically uses the latest version.
-
-**Global NPM users (Option 2):**
-```bash
-npm update -g gemini-imagen-mcp-server
-```
-
-**Manual installation users (Option 3):**
-```bash
-git pull
-npm install
-npm run build
-```
-
-## 🎛️ Command Line Options
-
-Configure the server behavior with command line arguments:
-
-```bash
-# Use different model as default
-node build/index.js --model imagen-4-ultra
-
-# Enable batch processing with custom batch size
-node build/index.js --batch --max-batch-size 8
-
-# Custom output directory
-node build/index.js --output-dir /path/to/your/images
-
-# Combine multiple options
-node build/index.js --model imagen-4 --batch --max-batch-size 4 --output-dir ./my-images
-```
-
-### Available Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--model <model>` | Default model (imagen-3, imagen-4, imagen-4-ultra) | imagen-4-ultra |
-| `--batch` | Enable batch processing mode | disabled |
-| `--max-batch-size <size>` | Maximum batch size (1-8) | 4 |
-| `--output-dir <dir>` | Output directory for images | ./generated_images |
-| `--display-mode <mode>` | How to display images (auto, inline, files, hybrid) | auto |
-| `--help, -h` | Show help message | - |
-| `--version, -v` | Show version | - |
-
-## 🖼️ Smart Image Display Modes
-
-The server automatically detects your environment and displays images appropriately:
-
-### Display Modes
-
-- **`auto`** (default): Automatically detects environment
-  - **Claude Desktop**: Shows images inline in chat
-  - **CLI/Project**: Saves images to files + shows small images inline  
-- **`inline`**: Always shows images inline in chat (best for Claude Desktop)
-- **`files`**: Always saves images to files (best for CLI/scripting)
-- **`hybrid`**: Saves files AND shows small images inline
-
-### Environment Detection
-
-The server detects your environment based on:
-- **Claude Desktop**: Process environment variables and parent process
-- **Project/CLI**: Working directory, presence of package.json or .git folder
-
-This ensures images display perfectly whether you're using Claude Desktop or working in a development environment!
-
-## 🔧 Available Tools
-
-### `generate_image`
-Generate single or multiple images with comprehensive parameters.
-
-**Parameters:**
-- `prompt` (required): Text description of the image
-- `model`: Model selection (imagen-3, imagen-4, imagen-4-ultra)
-- `number_of_images`: Number of images to generate (1-4)
-- `aspect_ratio`: Image aspect ratio (1:1, 3:4, 4:3, 9:16, 16:9)
-- `person_generation`: Control person generation (dont_allow, allow_adult, allow_all)
-- `negative_prompt`: What to avoid in the image
-- `seed`: Random seed for reproducible results
-- `output_format`: Output format (image/jpeg, image/png)
-
-**Example:**
-```
-Generate an image of "a serene mountain landscape at sunset" using imagen-4-ultra with 16:9 aspect ratio
-```
-
-### `batch_generate`
-Process multiple prompts efficiently with shared settings.
-
-**Parameters:**
-- `prompts`: Array of text prompts
-- `model`: Model to use for all images
-- `shared_settings`: Common settings (aspect_ratio, person_generation, output_format)
-
-**Example:**
-```
-Generate images for these prompts: ["peaceful forest", "bustling city", "calm ocean"] using imagen-4 with 3:4 aspect ratio
-```
-
-### `list_models`
-Show available Imagen models and their capabilities.
-
-### `health_check`
-Check server status, API connectivity, and configuration.
-
-## 📚 Available Resources
-
-### `generation_history`
-Access recent image generation history with full parameters and metadata.
-
-### `api_documentation`
-Comprehensive API documentation with examples and best practices.
-
-## 📖 Usage Examples
-
-### Basic Generation
+### Basic Image Generation
 ```
 Generate an image of "a cat wearing a space helmet"
 ```
 
-### Advanced Generation
+### Advanced Parameters
 ```
-Generate an image with these parameters:
-- Prompt: "futuristic city with flying cars"
+Generate an image with these settings:
+- Prompt: "minimalist website mockup for a coffee shop"
 - Model: imagen-4-ultra
 - Aspect ratio: 16:9
-- Negative prompt: "dark, gloomy, crowded"
-- Seed: 12345
+- Negative prompt: "cluttered, busy, complex"
 ```
 
-### Batch Processing
+### Batch Generation
 ```
 Generate images for these prompts:
-1. "sunrise over mountains"
-2. "cozy coffee shop interior"
-3. "abstract digital art"
+1. "logo design for a tech startup"
+2. "mobile app interface wireframe"
+3. "modern dashboard UI design"
 ```
 
-## 🧪 Development
+### Design Assets for Projects
+```
+Create a collection of images:
+- "app icon design, minimalist, blue and white"
+- "hero banner for landing page, technology theme"
+- "user avatar placeholder, professional style"
+```
 
-### Building and Testing
+## 🎛️ Advanced Features
 
+### Aspect Ratios
+- `1:1` - Perfect squares (logos, avatars)
+- `16:9` - Widescreen (banners, headers)
+- `9:16` - Portrait (mobile screens)
+- `4:3` - Standard (presentations)
+- `3:4` - Portrait (posters)
+
+### Control Parameters
+- **Negative Prompts**: Specify what to avoid
+- **Seeds**: Get reproducible results
+- **Person Generation**: Control person appearance
+- **Output Format**: JPEG or PNG
+
+### Batch Processing
+Generate multiple images efficiently with shared settings:
+```
+Generate a batch of logo variations with these prompts:
+["minimalist coffee logo", "geometric coffee logo", "vintage coffee logo"]
+using imagen-4-ultra with 1:1 aspect ratio
+```
+
+## ⚙️ Configuration Options
+
+### Command Line Arguments
+```bash
+# Use different default model
+npx gemini-imagen-mcp-server --model imagen-4-ultra
+
+# Enable batch processing
+npx gemini-imagen-mcp-server --batch --max-batch-size 8
+
+# Custom output directory
+npx gemini-imagen-mcp-server --output-dir assets/images
+```
+
+### Available Options
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--model` | Default model (imagen-3, imagen-4, imagen-4-ultra) | imagen-4-ultra |
+| `--batch` | Enable batch processing | disabled |
+| `--max-batch-size` | Max batch size (1-8) | 4 |
+| `--output-dir` | Output directory | imagen |
+
+## 🛠️ Installation Methods
+
+### Option 1: NPX (Recommended)
+No installation needed! Just configure and use:
+```json
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "npx",
+      "args": ["-y", "gemini-imagen-mcp-server"],
+      "env": {"GEMINI_API_KEY": "your-key"}
+    }
+  }
+}
+```
+
+### Option 2: Global Install
+```bash
+npm install -g gemini-imagen-mcp-server
+```
+
+Then configure:
+```json
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "gemini-imagen-claude-code",
+      "env": {"GEMINI_API_KEY": "your-key"}
+    }
+  }
+}
+```
+
+### Option 3: Local Development
+```bash
+git clone https://github.com/serkanhaslak/gemini-imagen-mcp-server.git
+cd gemini-imagen-mcp-server
+npm install
+npm run build
+```
+
+## 🧪 Development & Testing
+
+### Build & Test
 ```bash
 # Build the project
 npm run build
 
-# Run tests
+# Run comprehensive tests
 npm run test
 
 # Development with auto-rebuild
 npm run watch
 
-# Test with MCP Inspector
-npm run inspector
-```
-
-### Testing with MCP Inspector
-
-The MCP Inspector provides an interactive interface for testing:
-
-```bash
+# Interactive testing with MCP Inspector
 npm run dev
 ```
 
-This opens a web interface where you can test all tools and resources interactively.
+### Project Structure
+```
+src/
+├── index.ts          # Main MCP server implementation
+build/                # Compiled JavaScript
+test_server.js        # Comprehensive test suite
+tsconfig.json         # TypeScript configuration
+```
 
-## 🏗️ Architecture
+## 🔧 Available Tools
 
-The server implements the MCP protocol with:
+### `generate_image`
+Generate single or multiple images with full parameter control.
 
-- **4 Tools**: generate_image, batch_generate, list_models, health_check
-- **2 Resources**: generation_history, api_documentation
-- **Multiple Models**: Imagen 3, Imagen 4, Imagen 4 Ultra
-- **Batch Processing**: Configurable parallel processing
-- **Error Handling**: Comprehensive error handling and validation
-- **Type Safety**: Full TypeScript implementation with Zod validation
+### `batch_generate`
+Process multiple prompts efficiently with shared settings.
 
-## 📊 Model Comparison
+### `list_models`
+Show all available Imagen models and their capabilities.
 
-| Model | Status | Best For | Quality | Speed |
-|-------|--------|----------|---------|-------|
-| Imagen 3 | Stable | General use | High | Fast |
-| Imagen 4 | Preview | Better text rendering | Higher | Medium |
-| Imagen 4 Ultra | Preview | Premium quality | Highest | Slower |
+### `health_check`
+Check server status, API connectivity, and configuration.
 
-## 🔒 Security & Best Practices
+## 📚 Resources
 
-- **API Key Security**: Never commit API keys to version control
-- **Environment Variables**: Use environment variables for sensitive data
-- **Input Validation**: All inputs are validated using Zod schemas
-- **Error Handling**: Comprehensive error handling prevents crashes
-- **Rate Limiting**: Respects API rate limits and handles gracefully
+### `generation_history`
+Access recent image generation history with full parameters.
+
+### `api_documentation`
+Comprehensive API documentation with examples.
 
 ## 🐛 Troubleshooting
 
 ### Common Issues
 
-**Server won't start:**
-- Check that `GEMINI_API_KEY` is set correctly
-- Verify Node.js version (18+)
-- Ensure dependencies are installed: `npm install`
+**"GEMINI_API_KEY not found"**
+- Ensure API key is set in MCP configuration
+- Verify the key is valid and has billing enabled
 
-**API authentication errors:**
-- Verify API key is correct and has proper permissions
-- Check that billing is enabled for your Google Cloud project
-- Ensure the API key hasn't expired
+**"No images generated"**
+- Check if prompt violates content policies
+- Try a simpler prompt first
+- Verify API quota hasn't been exceeded
 
-**Generation fails:**
-- Check prompt doesn't violate content policies
-- Verify model availability in your region
-- Check API quotas and limits
-
-**Claude Desktop integration:**
-- Ensure configuration file path is correct
-- Verify server path is absolute
-- Restart Claude Desktop after configuration changes
+**"Permission denied"**
+- Ensure Claude Code has write access to project directory
+- Check that `imagen/` folder can be created
 
 ### Debug Mode
-
-Enable debug logging:
+Run with debug logging:
 ```bash
-DEBUG=* node build/index.js
+DEBUG=* npx gemini-imagen-mcp-server
 ```
 
-## 📋 API Reference
+## 🎯 Perfect for Claude Code Projects
 
-### Environment Variables
+This MCP server is specifically designed for developers using Claude Code:
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Your Google Gemini API key |
+- **Project-Centric**: Images go directly in your project
+- **Developer-Friendly**: Descriptive filenames with timestamps
+- **Workflow Integration**: Generate assets while coding
+- **Version Control Ready**: Images in dedicated folder
+- **Batch Operations**: Generate multiple assets efficiently
 
-### CLI Arguments
+## 🔒 Security & Best Practices
 
-All CLI arguments are optional and have sensible defaults.
+- ✅ API keys handled securely through environment variables
+- ✅ Input validation with Zod schemas
+- ✅ Comprehensive error handling
+- ✅ Rate limiting and quota management
+- ✅ No sensitive data logged or stored
 
-### Error Codes
+## 📈 Use Cases
 
-- `INVALID_API_KEY`: API key is missing or invalid
-- `RATE_LIMIT_EXCEEDED`: API rate limit reached
-- `CONTENT_POLICY_VIOLATION`: Prompt violates content policies
-- `INVALID_PARAMETERS`: Invalid tool parameters
-- `NETWORK_ERROR`: Network connectivity issues
+### Web Development
+- Hero images and banners
+- UI/UX mockups and wireframes
+- Logo and branding assets
+- Placeholder images
+
+### App Development
+- App icons and splash screens
+- User interface elements
+- Marketing assets
+- Documentation images
+
+### Content Creation
+- Blog post illustrations
+- Social media graphics
+- Presentation visuals
+- Product mockups
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and add tests
-4. Run tests: `npm run test`
-5. Commit your changes: `git commit -m 'Add amazing feature'`
-6. Push to the branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Make changes and add tests
+4. Run tests: `npm test`
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open Pull Request
+
+## 📊 API Limits & Pricing
+
+- **Free Tier**: Generous monthly quota
+- **Rate Limits**: Automatically handled
+- **Batch Processing**: Optimized for efficiency
+- **Cost Control**: Monitor usage with health checks
 
 ## 📜 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🌟 Why Choose This MCP Server?
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) for the specification
-- [Google Gemini API](https://ai.google.dev/gemini-api/docs/image-generation) for the Imagen models
-- [Anthropic](https://www.anthropic.com/) for Claude Desktop integration
-
-## 🔗 Links
-
-- [Google Gemini API Documentation](https://ai.google.dev/gemini-api/docs/image-generation)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [Claude Desktop](https://claude.ai/)
-- [MCP Servers Repository](https://github.com/modelcontextprotocol/servers)
+- **🎯 Purpose-Built**: Specifically for Claude Code workflows
+- **⚡ Zero Config**: Works out of the box with just API key
+- **📁 Smart Organization**: Images organized in project folders
+- **🔄 Active Development**: Regular updates and improvements
+- **📖 Great Documentation**: Comprehensive guides and examples
+- **🛠️ Developer-Friendly**: Built by developers, for developers
 
 ---
 
-**Ready to generate amazing images with Claude? Install the server and start creating!** 🎨
+**Ready to supercharge your Claude Code projects with AI-generated images?** 
+
+Install now and start creating! 🚀
+
+```bash
+# Just add to your MCP config and go!
+npx -y gemini-imagen-mcp-server --help
+```
