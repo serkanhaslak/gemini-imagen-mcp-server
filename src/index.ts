@@ -62,7 +62,7 @@ Example:
     }
     
     if (arg === '--version' || arg === '-v') {
-      console.log('1.0.0');
+      console.log('1.1.1');
       process.exit(0);
     }
     
@@ -130,7 +130,7 @@ console.error(`Output directory: ${serverConfig.outputDir}`);
 // Initialize server
 const server = new McpServer({
   name: "gemini-imagen-4",
-  version: "1.0.0"
+  version: "1.1.1"
 });
 
 // Image generation history for tracking
