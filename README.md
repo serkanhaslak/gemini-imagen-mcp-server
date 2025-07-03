@@ -1,5 +1,9 @@
 # Gemini Imagen MCP Server
 
+[![npm version](https://badge.fury.io/js/gemini-imagen-mcp-server.svg)](https://badge.fury.io/js/gemini-imagen-mcp-server)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+
 A production-ready Model Context Protocol (MCP) server that integrates Google's Gemini Imagen API with Claude Desktop for AI-powered image generation. Features multiple model support, batch processing, and advanced generation parameters.
 
 ## ✨ Features
@@ -24,9 +28,39 @@ A production-ready Model Context Protocol (MCP) server that integrates Google's 
 
 ### Installation
 
+#### 🚀 Option 1: NPM Installation (Recommended)
+
+**Install globally:**
+```bash
+npm install -g gemini-imagen-mcp-server
+```
+
+**Configure Claude Desktop:**
+
+Add to your Claude Desktop configuration file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "gemini-imagen-mcp",
+      "args": ["--model", "imagen-4-ultra", "--batch", "--max-batch-size", "4"],
+      "env": {
+        "GEMINI_API_KEY": "your-gemini-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### 📁 Option 2: Manual Installation
+
 1. **Clone and setup:**
 ```bash
-git clone https://github.com/your-username/gemini-imagen-mcp-server.git
+git clone https://github.com/serkanhaslak/gemini-imagen-mcp-server.git
 cd gemini-imagen-mcp-server
 npm install
 ```
@@ -57,7 +91,21 @@ Add to your Claude Desktop configuration file:
 }
 ```
 
-4. **Restart Claude Desktop** and start generating images!
+**Restart Claude Desktop** and start generating images!
+
+### Updates
+
+**NPM users:**
+```bash
+npm update -g gemini-imagen-mcp-server
+```
+
+**Manual installation users:**
+```bash
+git pull
+npm install
+npm run build
+```
 
 ## 🎛️ Command Line Options
 

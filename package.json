@@ -44,12 +44,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/gemini-imagen-mcp-server.git"
+    "url": "https://github.com/serkanhaslak/gemini-imagen-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/gemini-imagen-mcp-server/issues"
+    "url": "https://github.com/serkanhaslak/gemini-imagen-mcp-server/issues"
   },
-  "homepage": "https://github.com/your-username/gemini-imagen-mcp-server#readme",
+  "homepage": "https://github.com/serkanhaslak/gemini-imagen-mcp-server#readme",
   "engines": {
     "node": ">=18.0.0"
   },
