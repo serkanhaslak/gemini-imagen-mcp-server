@@ -21,15 +21,24 @@ type DisplayMode = 'auto' | 'inline' | 'files' | 'hybrid';
 
 // Environment detection
 function detectEnvironment(): DisplayMode {
-  // Check for Claude Desktop environment indicators
+  // Priority 1: Check for Claude Desktop environment indicators
   const parentProcess = process.env.CLAUDE_DESKTOP || process.env._; // Unix systems
   const isClaudeDesktop = parentProcess?.includes('Claude') || 
                          process.env.ELECTRON_RUN_AS_NODE === '1' ||
                          process.env.CLAUDE_MCP_SERVER === 'true' ||
                          process.env.PWD?.includes('Claude') ||
-                         process.cwd().includes('Claude');
+                         process.cwd().includes('Claude') ||
+                         process.env.NODE_ENV === 'claude-desktop' ||
+                         process.env.MCP_CLIENT_TYPE === 'claude-desktop';
   
-  // Check for project environment indicators
+  // Priority 2: Check if we're in Claude Code specifically
+  const isClaudeCode = process.env.TERM_PROGRAM === 'vscode' || 
+                      process.env.TERM?.includes('code') ||
+                      process.env.PWD?.includes('Claude Code') ||
+                      process.cwd().includes('Claude Code') ||
+                      process.env.MCP_CLIENT_TYPE === 'claude-code';
+  
+  // Priority 3: Check for project environment indicators  
   let isInProject = false;
   try {
     // Use synchronous fs operations for environment detection
@@ -44,12 +53,15 @@ function detectEnvironment(): DisplayMode {
                   process.cwd().includes('workspace');
   }
   
+  // Decision logic with clear priorities
   if (isClaudeDesktop) {
-    return 'inline'; // Claude Desktop: always inline
+    return 'inline'; // Claude Desktop: always inline, never save files
+  } else if (isClaudeCode) {
+    return 'hybrid'; // Claude Code: save files + show inline
   } else if (isInProject) {
-    return 'hybrid'; // Project: save files + inline for small images
+    return 'hybrid'; // Project: save files + show small images inline
   } else {
-    return 'files'; // Default: save files
+    return 'files'; // Default CLI: save files only
   }
 }
 
@@ -107,7 +119,7 @@ Example:
     }
     
     if (arg === '--version' || arg === '-v') {
-      console.log('1.2.3');
+      console.log('1.2.4');
       process.exit(0);
     }
     
@@ -185,11 +197,13 @@ console.error(`Batch processing: ${serverConfig.batchProcessing ? 'enabled' : 'd
 console.error(`Max batch size: ${serverConfig.maxBatchSize}`);
 console.error(`Output directory: ${serverConfig.outputDir}`);
 console.error(`Display mode: ${serverConfig.displayMode} ${cliConfig.displayMode ? '(explicit)' : '(auto-detected)'}`);
+console.error(`Environment debug: PWD=${process.env.PWD}, CWD=${process.cwd()}`);
+console.error(`Process debug: TERM=${process.env.TERM}, TERM_PROGRAM=${process.env.TERM_PROGRAM}`);
 
 // Initialize server
 const server = new McpServer({
   name: "gemini-imagen-4",
-  version: "1.2.3"
+  version: "1.2.4"
 });
 
 // Image generation history for tracking
@@ -271,22 +285,22 @@ async function handleImageDisplay(base64Data: string, mimeType: string, prompt: 
       break;
       
     case 'hybrid':
-      // Hybrid mode: Save files AND show small images inline
+      // Hybrid mode: Save files AND show images inline
       const filenameHybrid = generateFilename(prompt, model, index);
       const imagePathHybrid = await saveImageLocally(base64Data, filenameHybrid);
       
-      if (imageSize < 1.5 * 1024 * 1024) { // Under 1.5MB, show inline too
-        content.push({
-          type: "image",
-          data: base64Data,
-          mimeType: mimeType
-        });
-      }
+      // Always show images inline in hybrid mode
+      content.push({
+        type: "image",
+        data: base64Data,
+        mimeType: mimeType
+      });
       
+      // Also provide file path info
       if (imagePathHybrid) {
         content.push({
           type: "text",
-          text: `File saved: ${imagePathHybrid} (${formatBytes(imageSize)})`
+          text: `Image also saved to: ${imagePathHybrid} (${formatBytes(imageSize)})`
         });
       }
       break;
