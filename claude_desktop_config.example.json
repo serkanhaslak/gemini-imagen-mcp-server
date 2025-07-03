@@ -8,7 +8,7 @@
         "--model", "imagen-4-ultra",
         "--batch",
         "--max-batch-size", "4",
-        "--output-dir", "./my-generated-images"
+        "--display-mode", "auto"
       ],
       "env": {
         "GEMINI_API_KEY": "your-gemini-api-key-here"

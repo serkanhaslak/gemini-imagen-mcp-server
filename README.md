@@ -15,7 +15,7 @@ A production-ready Model Context Protocol (MCP) server that integrates Google's 
      "mcpServers": {
        "gemini-imagen": {
          "command": "npx",
-         "args": ["-y", "gemini-imagen-mcp-server", "--model", "imagen-4-ultra", "--batch"],
+         "args": ["-y", "gemini-imagen-mcp-server", "--model", "imagen-4-ultra", "--display-mode", "auto"],
          "env": {"GEMINI_API_KEY": "your-api-key-here"}
        }
      }
@@ -25,9 +25,12 @@ A production-ready Model Context Protocol (MCP) server that integrates Google's 
 
 **No installation required** - npx handles everything automatically!
 
+> **✅ Latest Update (v1.2.2):** Fixed Claude Desktop image display issues! Images now show perfectly inline in Claude Desktop chat with improved path handling and environment detection.
+
 ## ✨ Features
 
 - **🎨 Multiple Imagen Models**: Support for Imagen 3, Imagen 4, and Imagen 4 Ultra
+- **🖼️ Smart Image Display**: Auto-detects environment (Claude Desktop vs CLI) for optimal image display
 - **📦 Batch Processing**: Generate multiple images efficiently with configurable batch sizes
 - **🎛️ Advanced Parameters**: Negative prompts, person generation controls, custom seeds
 - **📐 Flexible Aspect Ratios**: Support for 1:1, 3:4, 4:3, 9:16, 16:9
@@ -63,6 +66,7 @@ A production-ready Model Context Protocol (MCP) server that integrates Google's 
         "-y",
         "gemini-imagen-mcp-server",
         "--model", "imagen-4-ultra",
+        "--display-mode", "auto",
         "--batch",
         "--max-batch-size", "4"
       ],
@@ -91,7 +95,7 @@ npm install -g gemini-imagen-mcp-server
   "mcpServers": {
     "gemini-imagen": {
       "command": "gemini-imagen-mcp",
-      "args": ["--model", "imagen-4-ultra", "--batch", "--max-batch-size", "4"],
+      "args": ["--model", "imagen-4-ultra", "--display-mode", "auto", "--batch", "--max-batch-size", "4"],
       "env": {
         "GEMINI_API_KEY": "your-gemini-api-key-here"
       }
@@ -180,8 +184,30 @@ node build/index.js --model imagen-4 --batch --max-batch-size 4 --output-dir ./m
 | `--batch` | Enable batch processing mode | disabled |
 | `--max-batch-size <size>` | Maximum batch size (1-8) | 4 |
 | `--output-dir <dir>` | Output directory for images | ./generated_images |
+| `--display-mode <mode>` | How to display images (auto, inline, files, hybrid) | auto |
 | `--help, -h` | Show help message | - |
 | `--version, -v` | Show version | - |
+
+## 🖼️ Smart Image Display Modes
+
+The server automatically detects your environment and displays images appropriately:
+
+### Display Modes
+
+- **`auto`** (default): Automatically detects environment
+  - **Claude Desktop**: Shows images inline in chat
+  - **CLI/Project**: Saves images to files + shows small images inline  
+- **`inline`**: Always shows images inline in chat (best for Claude Desktop)
+- **`files`**: Always saves images to files (best for CLI/scripting)
+- **`hybrid`**: Saves files AND shows small images inline
+
+### Environment Detection
+
+The server detects your environment based on:
+- **Claude Desktop**: Process environment variables and parent process
+- **Project/CLI**: Working directory, presence of package.json or .git folder
+
+This ensures images display perfectly whether you're using Claude Desktop or working in a development environment!
 
 ## 🔧 Available Tools
 

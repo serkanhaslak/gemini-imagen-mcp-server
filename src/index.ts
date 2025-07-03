@@ -16,6 +16,43 @@ const IMAGEN_MODELS = {
 
 type ImagenModel = keyof typeof IMAGEN_MODELS;
 
+// Display modes
+type DisplayMode = 'auto' | 'inline' | 'files' | 'hybrid';
+
+// Environment detection
+function detectEnvironment(): DisplayMode {
+  // Check for Claude Desktop environment indicators
+  const parentProcess = process.env.CLAUDE_DESKTOP || process.env._; // Unix systems
+  const isClaudeDesktop = parentProcess?.includes('Claude') || 
+                         process.env.ELECTRON_RUN_AS_NODE === '1' ||
+                         process.env.CLAUDE_MCP_SERVER === 'true' ||
+                         process.env.PWD?.includes('Claude') ||
+                         process.cwd().includes('Claude');
+  
+  // Check for project environment indicators
+  let isInProject = false;
+  try {
+    // Use synchronous fs operations for environment detection
+    const fs = require('fs');
+    isInProject = process.env.PWD?.includes('project') ||
+                  process.env.PWD?.includes('workspace') ||
+                  fs.existsSync('package.json') ||
+                  fs.existsSync('.git');
+  } catch (error) {
+    // Fallback: check current working directory
+    isInProject = process.cwd().includes('project') || 
+                  process.cwd().includes('workspace');
+  }
+  
+  if (isClaudeDesktop) {
+    return 'inline'; // Claude Desktop: always inline
+  } else if (isInProject) {
+    return 'hybrid'; // Project: save files + inline for small images
+  } else {
+    return 'files'; // Default: save files
+  }
+}
+
 // Configuration interface
 interface ServerConfig {
   apiKey: string;
@@ -23,6 +60,7 @@ interface ServerConfig {
   batchProcessing: boolean;
   maxBatchSize: number;
   outputDir: string;
+  displayMode: DisplayMode;
 }
 
 // Parse command line arguments
@@ -44,6 +82,7 @@ Options:
   --batch                  Enable batch processing mode
   --max-batch-size <size>  Maximum batch size (default: 4)
   --output-dir <dir>       Output directory for images (default: ./generated_images)
+  --display-mode <mode>    How to display images (auto, inline, files, hybrid)
   --help, -h               Show this help message
   --version, -v            Show version
 
@@ -55,14 +94,20 @@ Models:
   imagen-4                Imagen 4.0 (preview) 
   imagen-4-ultra          Imagen 4.0 Ultra (preview)
 
+Display Modes:
+  auto                    Auto-detect environment (Claude Desktop vs CLI)
+  inline                  Always show images inline in chat
+  files                   Always save images to files
+  hybrid                  Save files + show small images inline
+
 Example:
-  GEMINI_API_KEY=your_key node index.js --model imagen-4-ultra --batch
+  GEMINI_API_KEY=your_key node index.js --model imagen-4-ultra --batch --display-mode auto
 `);
       process.exit(0);
     }
     
     if (arg === '--version' || arg === '-v') {
-      console.log('1.1.1');
+      console.log('1.2.3');
       process.exit(0);
     }
     
@@ -95,6 +140,17 @@ Example:
       config.outputDir = args[i + 1];
       i++;
     }
+    
+    if (arg === '--display-mode' && i + 1 < args.length) {
+      const mode = args[i + 1] as DisplayMode;
+      if (['auto', 'inline', 'files', 'hybrid'].includes(mode)) {
+        config.displayMode = mode;
+        i++;
+      } else {
+        console.error(`Error: Invalid display mode '${mode}'. Valid modes: auto, inline, files, hybrid`);
+        process.exit(1);
+      }
+    }
   }
   
   return config;
@@ -111,12 +167,14 @@ if (!apiKey) {
 }
 
 // Server configuration
+const detectedMode = detectEnvironment();
 const serverConfig: ServerConfig = {
   apiKey,
   defaultModel: cliConfig.defaultModel || 'imagen-4-ultra',
   batchProcessing: cliConfig.batchProcessing || false,
   maxBatchSize: cliConfig.maxBatchSize || 4,
-  outputDir: cliConfig.outputDir || './generated_images'
+  outputDir: cliConfig.outputDir || './generated_images',
+  displayMode: cliConfig.displayMode || detectedMode
 };
 
 const IMAGEN_API_BASE = "https://generativelanguage.googleapis.com/v1beta";
@@ -126,11 +184,12 @@ console.error(`Default model: ${serverConfig.defaultModel}`);
 console.error(`Batch processing: ${serverConfig.batchProcessing ? 'enabled' : 'disabled'}`);
 console.error(`Max batch size: ${serverConfig.maxBatchSize}`);
 console.error(`Output directory: ${serverConfig.outputDir}`);
+console.error(`Display mode: ${serverConfig.displayMode} ${cliConfig.displayMode ? '(explicit)' : '(auto-detected)'}`);
 
 // Initialize server
 const server = new McpServer({
   name: "gemini-imagen-4",
-  version: "1.1.1"
+  version: "1.2.3"
 });
 
 // Image generation history for tracking
@@ -154,19 +213,94 @@ function generateFilename(prompt: string, model: string, index: number = 1): str
 
 // Helper function to save image locally
 async function saveImageLocally(base64Data: string, filename: string): Promise<string> {
-  const imagesDir = path.resolve(serverConfig.outputDir);
+  // Use a safe default directory for Claude Desktop
+  let outputDir = serverConfig.outputDir;
   
-  try {
-    await fs.access(imagesDir);
-  } catch {
-    await fs.mkdir(imagesDir, { recursive: true });
+  // If default path starts with './', resolve it relative to home directory in Claude Desktop
+  if (outputDir.startsWith('./')) {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || process.cwd();
+    outputDir = path.join(homeDir, 'generated_images');
+  } else if (!path.isAbsolute(outputDir)) {
+    // Make relative paths absolute
+    outputDir = path.resolve(process.cwd(), outputDir);
   }
   
-  const filepath = path.join(imagesDir, filename);
+  try {
+    await fs.access(outputDir);
+  } catch {
+    await fs.mkdir(outputDir, { recursive: true });
+  }
+  
+  const filepath = path.join(outputDir, filename);
   const buffer = Buffer.from(base64Data, 'base64');
   await fs.writeFile(filepath, buffer);
   
   return filepath;
+}
+
+// Smart image handling based on display mode
+async function handleImageDisplay(base64Data: string, mimeType: string, prompt: string, model: string, index: number = 1): Promise<any[]> {
+  const imageSize = Buffer.from(base64Data, 'base64').length;
+  const content: any[] = [];
+  
+  switch (serverConfig.displayMode) {
+    case 'inline':
+      // Claude Desktop mode: Always inline, never save files
+      content.push({
+        type: "image",
+        data: base64Data,
+        mimeType: mimeType
+      });
+      break;
+      
+    case 'files':
+      // CLI/Project mode: Always save files, show paths
+      const filename = generateFilename(prompt, model, index);
+      const imagePath = await saveImageLocally(base64Data, filename);
+      if (imagePath) {
+        content.push({
+          type: "text",
+          text: `Image saved to: ${imagePath}\\nSize: ${formatBytes(imageSize)}`
+        });
+      } else {
+        content.push({
+          type: "text",
+          text: `Failed to save image (Size: ${formatBytes(imageSize)})`
+        });
+      }
+      break;
+      
+    case 'hybrid':
+      // Hybrid mode: Save files AND show small images inline
+      const filenameHybrid = generateFilename(prompt, model, index);
+      const imagePathHybrid = await saveImageLocally(base64Data, filenameHybrid);
+      
+      if (imageSize < 1.5 * 1024 * 1024) { // Under 1.5MB, show inline too
+        content.push({
+          type: "image",
+          data: base64Data,
+          mimeType: mimeType
+        });
+      }
+      
+      if (imagePathHybrid) {
+        content.push({
+          type: "text",
+          text: `File saved: ${imagePathHybrid} (${formatBytes(imageSize)})`
+        });
+      }
+      break;
+      
+    default:
+      // Fallback: display inline
+      content.push({
+        type: "image",
+        data: base64Data,
+        mimeType: mimeType
+      });
+  }
+  
+  return content;
 }
 
 // Enhanced Imagen API call with comprehensive parameters
@@ -307,26 +441,18 @@ server.registerTool(
         text: `Generated ${response.predictions.length} image(s) with ${usedModel}\nPrompt: "${prompt}"\nAspect ratio: ${aspect_ratio}${negative_prompt ? `\nNegative prompt: "${negative_prompt}"` : ''}${seed ? `\nSeed: ${seed}` : ''}`
       });
 
-      // Process each image
+      // Process each image using smart display handling
       for (let i = 0; i < response.predictions.length; i++) {
         const prediction = response.predictions[i];
         if (prediction.bytesBase64Encoded) {
-          const imageSize = Buffer.from(prediction.bytesBase64Encoded, 'base64').length;
-          
-          if (imageSize < 1024 * 1024) { // Under 1MB, use base64
-            content.push({
-              type: "image",
-              data: prediction.bytesBase64Encoded,
-              mimeType: output_format
-            });
-          } else { // Larger images, save locally
-            const filename = generateFilename(prompt, usedModel, i + 1);
-            const imagePath = await saveImageLocally(prediction.bytesBase64Encoded, filename);
-            content.push({
-              type: "text",
-              text: `Large image saved to: ${imagePath}\nSize: ${formatBytes(imageSize)}`
-            });
-          }
+          const imageContent = await handleImageDisplay(
+            prediction.bytesBase64Encoded,
+            output_format,
+            prompt,
+            usedModel,
+            i + 1
+          );
+          content.push(...imageContent);
         }
       }
 
@@ -465,26 +591,21 @@ server.registerTool(
           for (let j = 0; j < result.predictions.length; j++) {
             const prediction = result.predictions[j];
             if (prediction.bytesBase64Encoded) {
-              const imageSize = Buffer.from(prediction.bytesBase64Encoded, 'base64').length;
+              // Add prompt label for batch images
+              content.push({
+                type: "text",
+                text: `Image ${i + 1}: "${prompt.slice(0, 50)}..."`
+              });
               
-              if (imageSize < 1024 * 1024) {
-                content.push({
-                  type: "text",
-                  text: `Image ${i + 1}: "${prompt.slice(0, 50)}..."`
-                });
-                content.push({
-                  type: "image",
-                  data: prediction.bytesBase64Encoded,
-                  mimeType: shared_settings.output_format || "image/jpeg"
-                });
-              } else {
-                const filename = generateFilename(prompt, usedModel, j + 1);
-                const imagePath = await saveImageLocally(prediction.bytesBase64Encoded, filename);
-                content.push({
-                  type: "text",
-                  text: `Image ${i + 1} saved: ${imagePath}\nPrompt: "${prompt}"\nSize: ${formatBytes(imageSize)}`
-                });
-              }
+              // Use smart display handling for batch images
+              const imageContent = await handleImageDisplay(
+                prediction.bytesBase64Encoded,
+                shared_settings.output_format || "image/jpeg",
+                prompt,
+                usedModel,
+                j + 1
+              );
+              content.push(...imageContent);
             }
           }
         }
