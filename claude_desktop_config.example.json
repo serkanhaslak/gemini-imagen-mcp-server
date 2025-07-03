@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "gemini-imagen": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/gemini-imagen-mcp-server/build/index.js",
+        "--model", "imagen-4-ultra",
+        "--batch",
+        "--max-batch-size", "4",
+        "--output-dir", "./my-generated-images"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "your-gemini-api-key-here"
+      }
+    }
+  }
+} 

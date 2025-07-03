@@ -1,0 +1,62 @@
+{
+  "name": "gemini-imagen-mcp-server",
+  "version": "1.0.0",
+  "description": "Production-ready MCP server for Google Gemini Imagen API with batch processing, model selection, and advanced features",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "gemini-imagen-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "dev": "npm run build && npm run inspector",
+    "test": "npm run build && node test_server.js",
+    "test:watch": "npm run build && npm run test -- --watch",
+    "clean": "rm -rf build/",
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@google/generative-ai": "^0.17.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "@types/node": "^20.10.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "gemini",
+    "imagen",
+    "imagen-3",
+    "imagen-4",
+    "ai",
+    "image-generation",
+    "text-to-image",
+    "claude",
+    "batch-processing",
+    "google-ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/gemini-imagen-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/gemini-imagen-mcp-server/issues"
+  },
+  "homepage": "https://github.com/your-username/gemini-imagen-mcp-server#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "build/",
+    "README.md",
+    "LICENSE",
+    "claude_desktop_config.example.json"
+  ]
+} 
